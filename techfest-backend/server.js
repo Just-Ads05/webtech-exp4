@@ -5,11 +5,12 @@ const cors = require("cors");
 const logger = require("./middleware/logger");
 const errors = require("./middleware/errorHandler");
 
+
 const app = express();
 app.use(cors());           // allow React (port 5173) to call the API
 app.use(express.json());
 app.use(logger);           // 1. log every request
-
+app.use("/api/cart", require("./routes/cart"));
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/events", require("./routes/events"));
 app.use("/api/registrations", require("./routes/registrations"));

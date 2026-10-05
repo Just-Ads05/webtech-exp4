@@ -1,10 +1,11 @@
 const express = require("express");
 const Event = require("../models/Event");
 const Registration = require("../models/Registration");
+const Order = require("../models/Order");
 const { auth } = require("../middleware/auth");
 const router = express.Router();
 
-// POST /api/registrations   body: { eventId }
+// POST /api/registrations  body: { eventId }
 router.post("/", auth, async (req, res, next) => {
   try {
     const event = await Event.findById(req.body.eventId);
@@ -25,16 +26,27 @@ router.post("/", auth, async (req, res, next) => {
     event.seats = event.seats - 1;
     await event.save();
     res.status(201).json({ message: "Registered successfully" });
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 });
 
-// GET /api/registrations/my
+// GET /api/registrations/my -> Fetches paid Orders first, falling back to direct Registrations
 router.get("/my", auth, async (req, res, next) => {
   try {
-    const list = await Registration.find({ user: req.user.id })
-      .populate("event");
-    res.json(list.filter((r) => r.event !== null));
-  } catch (err) { next(err); }
+    // 1. Fetch checkout cart orders
+    const orders = await Order.find({ userId: req.user.id }).sort({ createdAt: -1 });
+
+    if (orders.length > 0) {
+      return res.json(orders);
+    }
+
+    // 2. Fallback: Fetch legacy direct registrations if no orders exist
+    const legacyRegistrations = await Registration.find({ user: req.user.id }).populate("event");
+    res.json(legacyRegistrations.filter((r) => r.event !== null));
+  } catch (err) {
+    next(err);
+  }
 });
 
 module.exports = router;

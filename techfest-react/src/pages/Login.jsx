@@ -1,21 +1,25 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const API = "http://localhost:5000/api";
 
-function Login() {
+function Login({ setUser }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
   async function handleSubmit(e) {
     e.preventDefault();
     try {
-      const res = await axios.post(API + "/auth/login",
-        { email, password });
+      const res = await axios.post(API + "/auth/login", { email, password });
       localStorage.setItem("token", res.data.token);
+      localStorage.setItem("userName", res.data.name);
       localStorage.setItem("role", res.data.role);
-      setMessage("Welcome " + res.data.name);
+
+      setUser({ name: res.data.name, role: res.data.role, token: res.data.token });
+      navigate("/");
     } catch (err) {
       if (err.response) setMessage(err.response.data.message);
       else setMessage("Server not reachable");
@@ -23,16 +27,17 @@ function Login() {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Login</h2>
-      <input placeholder="Email" value={email}
-        onChange={(e) => setEmail(e.target.value)} />
-      <input type="password" placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)} />
-      <button type="submit">Login</button>
-      <p>{message}</p>
-    </form>
+    <div className="amz-auth-box">
+      <h2>Sign-In</h2>
+      {message && <p style={{ color: "#b12704", fontWeight: "bold" }}>{message}</p>}
+      <form onSubmit={handleSubmit}>
+        <label>Email</label>
+        <input className="amz-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <label>Password</label>
+        <input className="amz-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <button type="submit" className="amz-btn-primary" style={{ marginTop: "10px" }}>Sign-In</button>
+      </form>
+    </div>
   );
 }
 
